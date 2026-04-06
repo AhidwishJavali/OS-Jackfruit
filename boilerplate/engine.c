@@ -24,7 +24,7 @@
 #define CONTAINER_ID_LEN    32
 #define CONTROL_PATH        "/tmp/mini_runtime.sock"
 #define LOG_DIR             "logs"
-#define CONTROL_MESSAGE_LEN 256
+#define CONTROL_MESSAGE_LEN 2048
 #define CHILD_COMMAND_LEN   256
 #define LOG_CHUNK_SIZE      4096
 #define LOG_BUFFER_CAPACITY 16
@@ -581,7 +581,7 @@ snprintf(log_path, sizeof(log_path), "%s/%s/%s.log", cwd, LOG_DIR, req->containe
 
 static void handle_ps(supervisor_ctx_t *ctx, control_response_t *resp)
 {
-    char line[256];
+    char line[PATH_MAX + 256];
     memset(resp, 0, sizeof(*resp));
 
     pthread_mutex_lock(&ctx->metadata_lock);
@@ -600,10 +600,10 @@ static void handle_ps(supervisor_ctx_t *ctx, control_response_t *resp)
         strftime(tsbuf, sizeof(tsbuf), "%H:%M:%S", tm_info);
 
         snprintf(line, sizeof(line),
-                 "%-12s  pid=%-6d  state=%-8s  soft=%luMB  hard=%luMB  started=%s\n",
+                 "%-12s  pid=%-6d  state=%-8s  soft=%luMB  hard=%luMB  started=%s  log=%s  exit=%d  signal=%d\n",
                  rec->id, rec->host_pid, state_to_string(rec->state),
                  rec->soft_limit_bytes >> 20, rec->hard_limit_bytes >> 20,
-                 tsbuf);
+                 tsbuf, rec->log_path, rec->exit_code, rec->exit_signal);
 
         strncat(resp->message, line,
                 sizeof(resp->message) - strlen(resp->message) - 1);
