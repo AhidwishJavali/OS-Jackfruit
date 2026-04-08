@@ -253,8 +253,10 @@ int bounded_buffer_push(bounded_buffer_t *buf, const log_item_t *item)
 {
     pthread_mutex_lock(&buf->mutex);
 
-    while (buf->count == LOG_BUFFER_CAPACITY && !buf->shutting_down)
-        pthread_cond_wait(&buf->not_full, &buf->mutex);
+    while (buf->count == LOG_BUFFER_CAPACITY && !buf->shutting_down) {
+    fprintf(stderr, "[buffer] FULL -> producer waiting\n");
+    pthread_cond_wait(&buf->not_full, &buf->mutex);
+}
 
     if (buf->shutting_down) {
         pthread_mutex_unlock(&buf->mutex);
@@ -264,6 +266,8 @@ int bounded_buffer_push(bounded_buffer_t *buf, const log_item_t *item)
     buf->items[buf->tail] = *item;
     buf->tail = (buf->tail + 1) % LOG_BUFFER_CAPACITY;
     buf->count++;
+    fprintf(stderr, "[buffer] PUSH cid=%s size=%zu/%d\n",
+        item->container_id, buf->count, LOG_BUFFER_CAPACITY);
 
     pthread_cond_signal(&buf->not_empty);
     pthread_mutex_unlock(&buf->mutex);
@@ -274,8 +278,10 @@ int bounded_buffer_pop(bounded_buffer_t *buf, log_item_t *item)
 {
     pthread_mutex_lock(&buf->mutex);
 
-    while (buf->count == 0 && !buf->shutting_down)
-        pthread_cond_wait(&buf->not_empty, &buf->mutex);
+    while (buf->count == 0 && !buf->shutting_down) {
+    fprintf(stderr, "[buffer] EMPTY -> consumer waiting\n");
+    pthread_cond_wait(&buf->not_empty, &buf->mutex);
+}
 
     if (buf->count == 0 && buf->shutting_down) {
         pthread_mutex_unlock(&buf->mutex);
@@ -285,6 +291,8 @@ int bounded_buffer_pop(bounded_buffer_t *buf, log_item_t *item)
     *item = buf->items[buf->head];
     buf->head = (buf->head + 1) % LOG_BUFFER_CAPACITY;
     buf->count--;
+    fprintf(stderr, "[buffer] POP cid=%s size=%zu/%d\n",
+        item->container_id, buf->count, LOG_BUFFER_CAPACITY);
 
     pthread_cond_signal(&buf->not_full);
     pthread_mutex_unlock(&buf->mutex);
@@ -312,10 +320,12 @@ void *logging_thread(void *arg)
             perror("logging_thread: fopen");
             continue;
         }
+        fprintf(stderr, "[consumer] writing %zu bytes for '%s'\n",
+        item.length, item.container_id);
         fwrite(item.data, 1, item.length, f);
         fclose(f);
     }
-
+fprintf(stderr, "[consumer] buffer drained, exiting cleanly\n");
     return NULL;
 }
 

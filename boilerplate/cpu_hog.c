@@ -38,9 +38,10 @@ int main(int argc, char *argv[])
 
         if (time(NULL) != last_report) {
             last_report = time(NULL);
-            printf("cpu_hog alive elapsed=%ld accumulator=%llu\n",
-                   (long)(last_report - start),
-                   accumulator);
+            for (int i = 0; i < 1000; i++) {
+    printf("burst log %d\n", i);
+}
+                   fprintf(stderr, "ERROR_STREAM_TEST\n");
             fflush(stdout);
         }
     }
