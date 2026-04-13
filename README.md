@@ -4,8 +4,8 @@
 
 | Name | SRN |
 | :--- | :--- |
-| Aadhavan Muthusamy | PES1UG24CS002 |
-| Aakash Desai | PES1UG24CS006 |
+| Adyanth Mallur| PES1UG24CS036 |
+| Ahidwish | PES1UG24CS037 |
 
 ## 2. Build, Load, and Run Instructions
 
